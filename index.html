@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cooling Mode Forecast</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --mix: #fbbf24;        /* mixing */
+    --free: #34d399;       /* free */
+    --trim: #fb923c;       /* trim */
+    --recirc: #f87171;     /* recirculation */
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #0f172a, #1e3a5f);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px 0; font-size: 22px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  main {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    gap: 20px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card h2 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  select, input[type="date"], input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  button {
+    background: var(--accent);
+    color: #0f172a;
+    border: 0;
+    border-radius: 6px;
+    padding: 9px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button.secondary {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.danger {
+    background: #ef4444;
+    color: #fff;
+  }
+  button:hover { opacity: 0.9; }
+
+  .blocks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .block {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .block .label { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
+  .block .mode {
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .block .stats {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .stripe {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+  }
+  .mode-mixing      { color: var(--mix); }
+  .mode-free        { color: var(--free); }
+  .mode-trim        { color: var(--trim); }
+  .mode-recirc      { color: var(--recirc); }
+  .stripe-mixing    { background: var(--mix); }
+  .stripe-free      { background: var(--free); }
+  .stripe-trim      { background: var(--trim); }
+  .stripe-recirc    { background: var(--recirc); }
+
+  .week {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .day {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+  }
+  .day:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .day.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .day .date { font-size: 13px; font-weight: 600; }
+  .day .icon { font-size: 28px; margin: 6px 0; }
+  .day .temp { font-size: 13px; }
+  .day .rh   { font-size: 11px; color: var(--muted); }
+  .day .dom  { margin-top: 6px; font-size: 11px; font-weight: 700; }
+
+  .rules {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .rules table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .rules th, .rules td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 12px;
+  }
+  .rules th { background: var(--panel-2); color: var(--text); }
+
+  .status {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .error { color: var(--recirc); }
+  details.hourly {
+    margin-top: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  details.hourly > summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--accent);
+    user-select: none;
+    list-style: none;
+  }
+  details.hourly > summary::-webkit-details-marker { display: none; }
+  details.hourly > summary::before {
+    content: "\25B8";
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s;
+  }
+  details.hourly[open] > summary::before { transform: rotate(90deg); }
+  .hourly-wrap {
+    margin-top: 10px;
+    max-height: 260px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  .hourly-wrap table { width: 100%; border-collapse: collapse; }
+  .hourly-wrap th, .hourly-wrap td {
+    border-bottom: 1px solid var(--border);
+    padding: 4px 6px;
+    text-align: right;
+  }
+  .hourly-wrap th:first-child, .hourly-wrap td:first-child { text-align: left; }
+  .hourly-wrap th { color: var(--muted); font-weight: 500; font-size: 11px; }
+
+  .source {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .source a { color: var(--accent); text-decoration: none; }
+  .source a:hover { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    .controls { grid-template-columns: 1fr; }
+    .blocks { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_ApprovalStatus msdt:dt="string">0</mso:_ApprovalStatus>
+<mso:_ApprovalAssignedTo msdt:dt="string"></mso:_ApprovalAssignedTo>
+<mso:_ApprovalRespondedBy msdt:dt="string"></mso:_ApprovalRespondedBy>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+<body>
+<header>
+  <h1>Cooling Mode Forecast</h1>
+  <p>Predicts hourly cooling operation mode based on ambient weather.</p>
+  <p class="source">
+    Data source:
+    <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo Weather API</a>
+    &middot; Model: ECMWF / GFS ensemble
+    (<a href="https://open-meteo.com/en/docs" target="_blank" rel="noopener">API docs</a>,
+    <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">terms &amp; attribution</a>)
+  </p>
+</header>
+
+<main>
+  <!-- Location & date controls -->
+  <section class="card">
+    <h2>Location &amp; Date</h2>
+    <div class="controls">
+      <div>
+        <label for="locSelect">Location</label>
+        <select id="locSelect"></select>
+      </div>
+      <div>
+        <label for="dateSelect">Target Date</label>
+        <input type="date" id="dateSelect" />
+      </div>
+      <div>
+        <button id="refreshBtn">Refresh Forecast</button>
+      </div>
+    </div>
+
+    <div class="status" id="statusMsg"></div>
+  </section>
+
+  <!-- 4 time blocks for selected date -->
+  <section class="card">
+    <h2 id="blocksTitle">Cooling Mode by Time Block</h2>
+    <div class="blocks" id="blocks">
+      <div class="block"><div class="label">00:00 - 06:00</div><div class="mode">--</div></div>
+      <div class="block"><div class="label">06:00 - 12:00</div><div class="mode">--</div></div>
+      <div class="block"><div class="label">12:00 - 18:00</div><div class="mode">--</div></div>
+      <div class="block"><div class="label">18:00 - 22:00</div><div class="mode">--</div></div>
+    </div>
+    <details class="hourly" id="hourlyDetails">
+      <summary>Show hourly breakdown</summary>
+      <div class="hourly-wrap" id="hourlyTable"></div>
+    </details>
+  </section>
+
+  <!-- 7-day overview -->
+  <section class="card">
+    <h2>7-Day Outlook</h2>
+    <div class="week" id="week"></div>
+  </section>
+
+  <!-- Rules reference -->
+  <section class="card">
+    <h2>Cooling Mode Rules</h2>
+    <div class="rules">
+      <table>
+        <thead>
+          <tr><th>Operation Mode</th><th>Ambient Weather Condition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="mode-mixing">MIXING COOLING</span></td>
+              <td>Dry bulb &lt; 32 &deg;C, AND dew point &le; 28 &deg;C, AND RH &gt; 80%</td></tr>
+          <tr><td><span class="mode-free">FREE COOLING</span></td>
+              <td>Dry bulb &lt; 32 &deg;C, AND dew point &le; 28 &deg;C, AND RH &le; 80%</td></tr>
+          <tr><td><span class="mode-trim">TRIM COOLING</span></td>
+              <td>32 &le; dry bulb &lt; 45.5 &deg;C, AND dew point &le; 28 &deg;C</td></tr>
+          <tr><td><span class="mode-recirc">RECIRCULATION</span></td>
+              <td>Dry bulb &ge; 45.5 &deg;C, OR dew point &gt; 28 &deg;C (typhoon not auto-detected)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px">
+        Each time block uses the <strong>worst-case</strong> mode among its hourly forecasts
+        (priority: Recirculation &gt; Trim &gt; Mixing &gt; Free).
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+  // ---------------- Constants ----------------
+  const DEFAULT_LOCATIONS = [
+    { name: "TPE03", lat: 24.97488258220953, lon: 121.32592678066558 },
+    { name: "TPE05", lat: 25.05429459259833, lon: 121.27453570942386 }
+  ];
+  const STORAGE_KEY = "coolingForecast.locations.v1";
+  const BLOCKS = [
+    { label: "00:00 - 06:00", start: 0,  end: 6  },
+    { label: "06:00 - 12:00", start: 6,  end: 12 },
+    { label: "12:00 - 18:00", start: 12, end: 18 },
+    { label: "18:00 - 22:00", start: 18, end: 22 }
+  ];
+  const MODE_PRIORITY = { RECIRCULATION: 4, TRIM: 3, MIXING: 2, FREE: 1, UNKNOWN: 0 };
+  const MODE_CLASS = {
+    "MIXING":       { color: "mode-mixing",  stripe: "stripe-mixing", label: "MIXING COOLING" },
+    "FREE":         { color: "mode-free",    stripe: "stripe-free",   label: "FREE COOLING" },
+    "TRIM":         { color: "mode-trim",    stripe: "stripe-trim",   label: "TRIM COOLING" },
+    "RECIRCULATION":{ color: "mode-recirc",  stripe: "stripe-recirc", label: "RECIRCULATION" },
+    "UNKNOWN":      { color: "",             stripe: "",              label: "N/A" }
+  };
+
+  // WMO weather code -> emoji
+  function wmoIcon(code) {
+    if (code == null) return "\u2753";
+    if (code === 0) return "\u2600\uFE0F";
+    if ([1,2].includes(code)) return "\u26C5";
+    if (code === 3) return "\u2601\uFE0F";
+    if ([45,48].includes(code)) return "\uD83C\uDF2B\uFE0F";
+    if ([51,53,55,56,57].includes(code)) return "\uD83C\uDF26\uFE0F";
+    if ([61,63,65,80,81,82].includes(code)) return "\uD83C\uDF27\uFE0F";
+    if ([66,67].includes(code)) return "\uD83C\uDF28\uFE0F";
+    if ([71,73,75,77,85,86].includes(code)) return "\u2744\uFE0F";
+    if ([95,96,99].includes(code)) return "\u26C8\uFE0F";
+    return "\uD83C\uDF24\uFE0F";
+  }
+
+  // ---------------- State ----------------
+  let locations = loadLocations();
+  let currentForecast = null; // { hourly: {time[], temp[], dew[], rh[]}, daily: {...} }
+
+  // ---------------- Storage ----------------
+  function loadLocations() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch (e) { /* ignore */ }
+    return [...DEFAULT_LOCATIONS];
+  }
+  function saveLocations() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(locations));
+  }
+
+  // ---------------- Mode classification ----------------
+  function classify(temp, dew, rh) {
+    if (temp == null || dew == null || rh == null) return "UNKNOWN";
+    if (temp >= 45.5 || dew > 28) return "RECIRCULATION";
+    if (temp >= 32 && temp < 45.5 && dew <= 28) return "TRIM";
+    if (temp < 32 && dew <= 28 && rh > 80) return "MIXING";
+    if (temp < 32 && dew <= 28 && rh <= 80) return "FREE";
+    // edge: temp < 32 but dew > 28 already returns RECIRCULATION above
+    return "UNKNOWN";
+  }
+  function worstMode(modes) {
+    let best = "UNKNOWN";
+    for (const m of modes) {
+      if ((MODE_PRIORITY[m] || 0) > (MODE_PRIORITY[best] || 0)) best = m;
+    }
+    return best;
+  }
+
+  // ---------------- API ----------------
+  async function fetchForecast(lat, lon) {
+    const url = new URL("https://api.open-meteo.com/v1/forecast");
+    url.searchParams.set("latitude", lat);
+    url.searchParams.set("longitude", lon);
+    url.searchParams.set("hourly", "temperature_2m,dew_point_2m,relative_humidity_2m,weather_code");
+    url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min");
+    url.searchParams.set("forecast_days", "7");
+    url.searchParams.set("timezone", "auto");
+    const res = await fetch(url.toString());
+    if (!res.ok) throw new Error("Forecast request failed: " + res.status);
+    return await res.json();
+  }
+
+  // ---------------- Render ----------------
+  function renderLocationSelect() {
+    const sel = document.getElementById("locSelect");
+    sel.innerHTML = "";
+    locations.forEach((loc, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `${loc.name}  (${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)})`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById("statusMsg");
+    el.textContent = msg || "";
+    el.className = "status" + (isError ? " error" : "");
+  }
+
+  function indicesForDate(hourlyTimes, isoDate) {
+    // hourlyTimes are local ISO strings like "2026-06-30T13:00"
+    const out = [];
+    for (let i = 0; i < hourlyTimes.length; i++) {
+      if (hourlyTimes[i].startsWith(isoDate)) out.push(i);
+    }
+    return out;
+  }
+
+  function renderBlocks(dateStr) {
+    const container = document.getElementById("blocks");
+    const title = document.getElementById("blocksTitle");
+    container.innerHTML = "";
+    if (!currentForecast) {
+      title.textContent = "Cooling Mode by Time Block";
+      return;
+    }
+    const h = currentForecast.hourly;
+    const idx = indicesForDate(h.time, dateStr);
+    title.textContent = `Cooling Mode by Time Block  —  ${dateStr}`;
+
+    BLOCKS.forEach(b => {
+      const hourly = idx.filter(i => {
+        const hr = parseInt(h.time[i].slice(11, 13), 10);
+        return hr >= b.start && hr < b.end;
+      });
+      const modes = hourly.map(i => classify(h.temperature_2m[i], h.dew_point_2m[i], h.relative_humidity_2m[i]));
+      const mode = worstMode(modes);
+      const tempVals = hourly.map(i => h.temperature_2m[i]).filter(v => v != null);
+      const dewVals  = hourly.map(i => h.dew_point_2m[i]).filter(v => v != null);
+      const rhVals   = hourly.map(i => h.relative_humidity_2m[i]).filter(v => v != null);
+      const cls = MODE_CLASS[mode] || MODE_CLASS.UNKNOWN;
+
+      const div = document.createElement("div");
+      div.className = "block";
+      div.innerHTML = `
+        <div class="stripe ${cls.stripe}"></div>
+        <div class="label">${b.label}</div>
+        <div class="mode ${cls.color}">${cls.label}</div>
+        <div class="stats">
+          ${tempVals.length ? `Dry Bulb: ${Math.min(...tempVals).toFixed(1)} ~ ${Math.max(...tempVals).toFixed(1)} &deg;C<br>` : ""}
+          ${dewVals.length  ? `Dew Pt:  ${Math.min(...dewVals).toFixed(1)} ~ ${Math.max(...dewVals).toFixed(1)} &deg;C<br>` : ""}
+          ${rhVals.length   ? `RH:      ${Math.min(...rhVals).toFixed(0)} ~ ${Math.max(...rhVals).toFixed(0)} %`        : "No data"}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    renderHourlyTable(dateStr, idx);
+  }
+
+  function renderHourlyTable(dateStr, idx) {
+    const h = currentForecast.hourly;
+    const wrap = document.getElementById("hourlyTable");
+    if (!idx.length) { wrap.innerHTML = ""; return; }
+    let html = `<table>
+      <thead><tr>
+        <th>Hour</th><th>Dry Bulb (&deg;C)</th><th>Dew Pt (&deg;C)</th><th>RH (%)</th><th>Mode</th>
+      </tr></thead><tbody>`;
+    for (const i of idx) {
+      const hr = h.time[i].slice(11, 16);
+      const t = h.temperature_2m[i];
+      const d = h.dew_point_2m[i];
+      const r = h.relative_humidity_2m[i];
+      const m = classify(t, d, r);
+      const cls = MODE_CLASS[m] || MODE_CLASS.UNKNOWN;
+      html += `<tr>
+        <td>${hr}</td>
+        <td>${t != null ? t.toFixed(1) : "-"}</td>
+        <td>${d != null ? d.toFixed(1) : "-"}</td>
+        <td>${r != null ? r.toFixed(0) : "-"}</td>
+        <td class="${cls.color}">${cls.label}</td>
+      </tr>`;
+    }
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+  }
+
+  function renderWeek(selectedDate) {
+    const container = document.getElementById("week");
+    container.innerHTML = "";
+    if (!currentForecast || !currentForecast.daily) return;
+    const d = currentForecast.daily;
+    const h = currentForecast.hourly;
+
+    for (let i = 0; i < d.time.length; i++) {
+      const dateStr = d.time[i];
+      // compute dominant (worst-case) mode for the day from hourly data
+      const idx = indicesForDate(h.time, dateStr);
+      const modes = idx.map(k => classify(h.temperature_2m[k], h.dew_point_2m[k], h.relative_humidity_2m[k]));
+      const dom = worstMode(modes);
+      const cls = MODE_CLASS[dom] || MODE_CLASS.UNKNOWN;
+
+      const dayObj = new Date(dateStr + "T00:00:00");
+      const weekday = dayObj.toLocaleDateString("en-US", { weekday: "short" });
+      const mmdd = dayObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      const div = document.createElement("div");
+      div.className = "day" + (dateStr === selectedDate ? " selected" : "");
+      div.dataset.date = dateStr;
+      div.innerHTML = `
+        <div class="date">${weekday}, ${mmdd}</div>
+        <div class="icon">${wmoIcon(d.weather_code[i])}</div>
+        <div class="temp">${d.temperature_2m_min[i].toFixed(0)}&deg; / <strong>${d.temperature_2m_max[i].toFixed(0)}&deg;C</strong></div>
+        <div class="rh">RH ${d.relative_humidity_2m_min[i].toFixed(0)}-${d.relative_humidity_2m_max[i].toFixed(0)}%</div>
+        <div class="dom ${cls.color}">${cls.label}</div>
+      `;
+      div.addEventListener("click", () => {
+        document.getElementById("dateSelect").value = dateStr;
+        renderBlocks(dateStr);
+        // refresh selection styling
+        document.querySelectorAll(".day").forEach(el =>
+          el.classList.toggle("selected", el.dataset.date === dateStr)
+        );
+      });
+      container.appendChild(div);
+    }
+  }
+
+  // ---------------- Actions ----------------
+  async function loadAndRender() {
+    const sel = document.getElementById("locSelect");
+    const i = parseInt(sel.value, 10);
+    if (isNaN(i) || !locations[i]) {
+      setStatus("No location selected.", true);
+      return;
+    }
+    const loc = locations[i];
+    setStatus(`Fetching forecast for ${loc.name}...`);
+    try {
+      currentForecast = await fetchForecast(loc.lat, loc.lon);
+      // Default the date input to first day if empty / out of range
+      const dateInput = document.getElementById("dateSelect");
+      const validDates = currentForecast.daily.time;
+      if (!dateInput.value || !validDates.includes(dateInput.value)) {
+        dateInput.value = validDates[0];
+      }
+      dateInput.min = validDates[0];
+      dateInput.max = validDates[validDates.length - 1];
+      renderBlocks(dateInput.value);
+      renderWeek(dateInput.value);
+      setStatus(`Loaded. Timezone: ${currentForecast.timezone} | Range: ${validDates[0]} ~ ${validDates[validDates.length-1]}`);
+    } catch (e) {
+      setStatus("Error: " + e.message, true);
+    }
+  }
+
+  // ---------------- Init ----------------
+  function init() {
+    renderLocationSelect();
+    // default date = today
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    document.getElementById("dateSelect").value = todayStr;
+
+    document.getElementById("refreshBtn").addEventListener("click", loadAndRender);
+    document.getElementById("locSelect").addEventListener("change", loadAndRender);
+    document.getElementById("dateSelect").addEventListener("change", () => {
+      const v = document.getElementById("dateSelect").value;
+      if (currentForecast) {
+        renderBlocks(v);
+        renderWeek(v);
+      }
+    });
+
+    loadAndRender();
+  }
+  window.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
