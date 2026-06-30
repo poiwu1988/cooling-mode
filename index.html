@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -226,14 +226,6 @@
     .blocks { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
-
-<!--[if gte mso 9]><xml>
-<mso:CustomDocumentProperties>
-<mso:_ApprovalStatus msdt:dt="string">0</mso:_ApprovalStatus>
-<mso:_ApprovalAssignedTo msdt:dt="string"></mso:_ApprovalAssignedTo>
-<mso:_ApprovalRespondedBy msdt:dt="string"></mso:_ApprovalRespondedBy>
-</mso:CustomDocumentProperties>
-</xml><![endif]-->
 </head>
 <body>
 <header>
@@ -276,7 +268,7 @@
       <div class="block"><div class="label">00:00 - 06:00</div><div class="mode">--</div></div>
       <div class="block"><div class="label">06:00 - 12:00</div><div class="mode">--</div></div>
       <div class="block"><div class="label">12:00 - 18:00</div><div class="mode">--</div></div>
-      <div class="block"><div class="label">18:00 - 22:00</div><div class="mode">--</div></div>
+      <div class="block"><div class="label">18:00 - 24:00</div><div class="mode">--</div></div>
     </div>
     <details class="hourly" id="hourlyDetails">
       <summary>Show hourly breakdown</summary>
@@ -328,7 +320,7 @@
     { label: "00:00 - 06:00", start: 0,  end: 6  },
     { label: "06:00 - 12:00", start: 6,  end: 12 },
     { label: "12:00 - 18:00", start: 12, end: 18 },
-    { label: "18:00 - 22:00", start: 18, end: 22 }
+    { label: "18:00 - 24:00", start: 18, end: 24 }
   ];
   const MODE_PRIORITY = { RECIRCULATION: 4, TRIM: 3, MIXING: 2, FREE: 1, UNKNOWN: 0 };
   const MODE_CLASS = {
